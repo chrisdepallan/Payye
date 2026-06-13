@@ -1,0 +1,29 @@
+# --- Core API ---
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27
+pydantic>=2.6,<3.0
+pydantic-settings>=2.2
+email-validator>=2.1
+python-multipart>=0.0.9
+
+# --- Database ---
+SQLAlchemy>=2.0,<2.1
+alembic>=1.13
+# Postgres driver (only needed when DATABASE_URL points at Postgres):
+# psycopg[binary]>=3.1
+
+# --- Auth ---
+PyJWT>=2.8
+passlib>=1.7.4
+
+# --- Documents ---
+pypdf>=4.0
+
+# --- Optional integrations ---
+# Enable these when you configure the matching settings.
+openai>=1.14        # AI features (falls back to local heuristics if unset)
+boto3>=1.34         # S3 / MinIO storage (STORAGE_BACKEND=s3)
+
+# --- Tests ---
+pytest>=8.0
+httpx>=0.27

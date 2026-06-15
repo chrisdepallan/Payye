@@ -1,33 +1,17 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
-import { API_URL } from '../constants/config';
-import { useAuthStore } from '../store/authStore';
+import { API_URL, APP_TOKEN } from '../constants/config';
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 20000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach the bearer token (read fresh from the store on every request).
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// On 401 the token is stale/invalid — clear auth so the app returns to login.
-api.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      void useAuthStore.getState().logout();
-    }
-    return Promise.reject(error);
-  },
-);
+// Optional shared gateway token (protects the backend's OpenAI quota).
+if (APP_TOKEN) {
+  api.defaults.headers.common['X-App-Token'] = APP_TOKEN;
+}
 
 /** Pull a human-readable message out of an axios error. */
 export function getErrorMessage(error: unknown, fallback = 'Something went wrong'): string {
@@ -40,7 +24,7 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
     }
     if (error.code === 'ECONNABORTED') return 'Request timed out';
     if (error.message === 'Network Error') {
-      return 'Cannot reach the server. Is the backend running?';
+      return 'Cannot reach the AI server. Is the backend running?';
     }
   }
   return fallback;

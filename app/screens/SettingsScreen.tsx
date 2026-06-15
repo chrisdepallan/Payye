@@ -1,41 +1,22 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Screen } from '../components/Screen';
 import { SpeedControls } from '../components/SpeedControls';
 import { radius, spacing } from '../constants/theme';
-import { useSettings, useUpdateSettings } from '../hooks/useSettings';
 import { useTheme } from '../hooks/useTheme';
-import { useAuthStore } from '../store/authStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 export function SettingsScreen() {
   const { palette } = useTheme();
-  const { data: settings, isLoading } = useSettings();
-  const update = useUpdateSettings();
-  const logout = useAuthStore((s) => s.logout);
-  const user = useAuthStore((s) => s.user);
-
-  const fontSize = settings?.font_size ?? 48;
-
-  if (isLoading || !settings) {
-    return (
-      <Screen>
-        <ActivityIndicator color={palette.primary} style={{ marginTop: spacing.xl }} />
-      </Screen>
-    );
-  }
+  const settings = useSettingsStore();
+  const { update } = settings;
+  const fontSize = settings.font_size;
 
   return (
     <Screen>
       <Text style={[styles.heading, { color: palette.text }]}>Settings</Text>
-
-      <Card style={styles.card}>
-        <Text style={[styles.label, { color: palette.textMuted }]}>SIGNED IN AS</Text>
-        <Text style={[styles.value, { color: palette.text }]}>{user?.name}</Text>
-        <Text style={{ color: palette.textMuted }}>{user?.email}</Text>
-      </Card>
 
       <Card style={styles.card}>
         <Text style={[styles.label, { color: palette.textMuted }]}>THEME</Text>
@@ -45,7 +26,7 @@ export function SettingsScreen() {
             return (
               <Pressable
                 key={option}
-                onPress={() => update.mutate({ theme: option })}
+                onPress={() => update({ theme: option })}
                 style={[
                   styles.themeChip,
                   {
@@ -74,7 +55,7 @@ export function SettingsScreen() {
         <View style={{ marginTop: spacing.sm }}>
           <SpeedControls
             wpm={settings.default_wpm}
-            onChange={(value) => update.mutate({ default_wpm: value })}
+            onChange={(value) => update({ default_wpm: value })}
           />
         </View>
       </Card>
@@ -84,7 +65,7 @@ export function SettingsScreen() {
           <Text style={[styles.value, { color: palette.text }]}>Font size</Text>
           <View style={styles.stepper}>
             <Pressable
-              onPress={() => update.mutate({ font_size: Math.max(fontSize - 4, 24) })}
+              onPress={() => update({ font_size: Math.max(fontSize - 4, 24) })}
               style={[styles.stepButton, { backgroundColor: palette.surfaceAlt }]}
             >
               <Text style={[styles.stepLabel, { color: palette.text }]}>A−</Text>
@@ -93,7 +74,7 @@ export function SettingsScreen() {
               {fontSize}
             </Text>
             <Pressable
-              onPress={() => update.mutate({ font_size: Math.min(fontSize + 4, 120) })}
+              onPress={() => update({ font_size: Math.min(fontSize + 4, 120) })}
               style={[styles.stepButton, { backgroundColor: palette.surfaceAlt }]}
             >
               <Text style={[styles.stepLabel, { color: palette.text }]}>A+</Text>
@@ -105,13 +86,15 @@ export function SettingsScreen() {
           <Text style={[styles.value, { color: palette.text }]}>Pause on punctuation</Text>
           <Switch
             value={settings.pause_on_punctuation}
-            onValueChange={(value) => update.mutate({ pause_on_punctuation: value })}
+            onValueChange={(value) => update({ pause_on_punctuation: value })}
             trackColor={{ true: palette.primary, false: palette.border }}
           />
         </View>
       </Card>
 
-      <Button title="Log out" variant="danger" onPress={() => void logout()} style={styles.logout} />
+      <Text style={[styles.note, { color: palette.textMuted }]}>
+        Your documents, progress and settings are stored only on this device.
+      </Text>
     </Screen>
   );
 }
@@ -168,7 +151,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  logout: {
+  note: {
     marginTop: spacing.sm,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

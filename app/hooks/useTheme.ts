@@ -1,8 +1,7 @@
 import { Palette, palettes } from '../constants/theme';
-import { useSettings } from './useSettings';
+import { useSettingsStore } from '../store/settingsStore';
 
 export function useTheme(): { palette: Palette; scheme: 'dark' | 'light' } {
-  const { data } = useSettings();
-  const scheme = data?.theme ?? 'dark';
+  const scheme = useSettingsStore((s) => s.theme);
   return { palette: palettes[scheme], scheme };
 }

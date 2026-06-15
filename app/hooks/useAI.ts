@@ -2,20 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getKeywords, getSummary } from '../services/ai';
 
-export function useSummary(documentId: string, enabled: boolean) {
+// Cached per document id; the text is sent to the stateless backend on fetch.
+export function useSummary(documentId: string, text: string, enabled: boolean) {
   return useQuery({
     queryKey: ['ai', 'summary', documentId],
-    queryFn: () => getSummary(documentId),
-    enabled,
+    queryFn: () => getSummary(text),
+    enabled: enabled && !!text,
     staleTime: Infinity,
   });
 }
 
-export function useKeywords(documentId: string, enabled: boolean) {
+export function useKeywords(documentId: string, text: string, enabled: boolean) {
   return useQuery({
     queryKey: ['ai', 'keywords', documentId],
-    queryFn: () => getKeywords(documentId),
-    enabled,
+    queryFn: () => getKeywords(text),
+    enabled: enabled && !!text,
     staleTime: Infinity,
   });
 }

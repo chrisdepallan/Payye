@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AIInsightsModal } from '../components/AIInsightsModal';
 import { ProgressBar } from '../components/ProgressBar';
@@ -8,15 +8,14 @@ import { Screen } from '../components/Screen';
 import { SpeedControls } from '../components/SpeedControls';
 import { WordDisplay } from '../components/WordDisplay';
 import { spacing } from '../constants/theme';
-import { useDocument } from '../hooks/useDocuments';
 import { useReaderEngine } from '../hooks/useReaderEngine';
-import { useStartSession, useUpdateSession } from '../hooks/useSessions';
-import { useSettings } from '../hooks/useSettings';
 import { useTheme } from '../hooks/useTheme';
 import { RootStackScreenProps } from '../navigation/types';
-import { getErrorMessage } from '../services/api';
+import { useLibraryStore } from '../store/libraryStore';
 import { useReaderStore } from '../store/readerStore';
-import { SessionStatus, SessionWithDocument } from '../types';
+import { useSessionsStore } from '../store/sessionsStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { SessionStatus } from '../types';
 import { estimateMinutesRemaining, formatDuration } from '../utils/readerTiming';
 
 const SAVE_EVERY_WORDS = 25;
@@ -25,10 +24,11 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const { documentId } = route.params;
   const { palette } = useTheme();
 
-  const { data: doc } = useDocument(documentId);
-  const { data: settings } = useSettings();
-  const { mutate: startSession } = useStartSession();
-  const { mutate: updateSession } = useUpdateSession();
+  const doc = useLibraryStore((s) => s.documents.find((d) => d.id === documentId));
+  const fontSize = useSettingsStore((s) => s.font_size);
+  const defaultWpm = useSettingsStore((s) => s.default_wpm);
+  const pauseOnPunctuation = useSettingsStore((s) => s.pause_on_punctuation);
+  const upsertSession = useSessionsStore((s) => s.upsert);
 
   const load = useReaderStore((s) => s.load);
   const tokens = useReaderStore((s) => s.tokens);
@@ -40,17 +40,13 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const setIndex = useReaderStore((s) => s.setIndex);
   const setWpm = useReaderStore((s) => s.setWpm);
 
-  const [sessionData, setSessionData] = useState<SessionWithDocument | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [showAI, setShowAI] = useState(false);
 
-  const startedRef = useRef(false);
   const loadedRef = useRef(false);
   const lastSavedRef = useRef(0);
   const completedRef = useRef(false);
 
-  const fontSize = settings?.font_size ?? 48;
   const total = tokens.length;
   const atEnd = total > 0 && index >= total - 1 && !isPlaying;
   const progress = total > 0 ? (index + 1) / total : 0;
@@ -58,45 +54,40 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const persistProgress = useCallback(
     (status: SessionStatus) => {
       const state = useReaderStore.getState();
-      if (!state.sessionId) return;
       lastSavedRef.current = state.index;
-      updateSession({
-        id: state.sessionId,
-        payload: { current_word_index: state.index, wpm: state.wpm, status },
+      upsertSession(documentId, {
+        current_word_index: state.index,
+        wpm: state.wpm,
+        status,
       });
     },
-    [updateSession],
+    [documentId, upsertSession],
   );
 
-  // Start (or resume) the session once for this document.
+  // Load the reader once the document is available.
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-    startSession(
-      { documentId },
-      {
-        onSuccess: setSessionData,
-        onError: (e) => setLoadError(getErrorMessage(e, 'Could not start session')),
-      },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId]);
-
-  // Load the reader store once both the document text and session are ready.
-  useEffect(() => {
-    if (loadedRef.current || !doc || !sessionData) return;
+    if (loadedRef.current || !doc) return;
     loadedRef.current = true;
-    lastSavedRef.current = sessionData.current_word_index;
+    const record = useSessionsStore.getState().sessions[documentId];
+    const startIndex = record?.current_word_index ?? 0;
+    const startWpm = record?.wpm ?? defaultWpm;
+    lastSavedRef.current = startIndex;
     load({
-      sessionId: sessionData.id,
-      documentId: doc.id,
+      sessionId: documentId,
+      documentId,
       title: doc.title,
       text: doc.text_content,
-      startIndex: sessionData.current_word_index,
-      wpm: sessionData.wpm,
-      pauseOnPunctuation: settings?.pause_on_punctuation ?? true,
+      startIndex,
+      wpm: startWpm,
+      pauseOnPunctuation,
     });
-  }, [doc, sessionData, settings, load]);
+    upsertSession(documentId, {
+      current_word_index: startIndex,
+      wpm: startWpm,
+      status: 'active',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc]);
 
   const onComplete = useCallback(() => {
     completedRef.current = true;
@@ -118,14 +109,11 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
     return () => {
       if (completedRef.current) return;
       const state = useReaderStore.getState();
-      if (state.sessionId) {
-        updateSession({
-          id: state.sessionId,
-          payload: {
-            current_word_index: state.index,
-            wpm: state.wpm,
-            status: 'paused',
-          },
+      if (state.documentId) {
+        upsertSession(state.documentId, {
+          current_word_index: state.index,
+          wpm: state.wpm,
+          status: 'paused',
         });
       }
     };
@@ -145,21 +133,11 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
     persistProgress('active');
   };
 
-  if (loadError) {
+  if (!doc) {
     return (
       <Screen>
         <View style={styles.centered}>
-          <Text style={{ color: palette.danger, textAlign: 'center' }}>{loadError}</Text>
-        </View>
-      </Screen>
-    );
-  }
-
-  if (!loadedRef.current && total === 0) {
-    return (
-      <Screen>
-        <View style={styles.centered}>
-          <ActivityIndicator color={palette.primary} />
+          <Text style={{ color: palette.danger }}>Document not found.</Text>
         </View>
       </Screen>
     );
@@ -175,7 +153,7 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
             <Ionicons name="chevron-back" size={26} color={palette.text} />
           </Pressable>
           <Text style={[styles.title, { color: palette.text }]} numberOfLines={1}>
-            {doc?.title ?? 'Reading'}
+            {doc.title}
           </Text>
           <View style={styles.topActions}>
             <Pressable onPress={() => setShowAI(true)} hitSlop={10}>
@@ -251,6 +229,7 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
 
       <AIInsightsModal
         documentId={documentId}
+        text={doc.text_content}
         visible={showAI}
         onClose={() => setShowAI(false)}
       />

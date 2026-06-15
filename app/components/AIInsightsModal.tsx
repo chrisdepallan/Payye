@@ -16,14 +16,15 @@ import { getErrorMessage } from '../services/api';
 
 interface AIInsightsModalProps {
   documentId: string;
+  text: string;
   visible: boolean;
   onClose: () => void;
 }
 
-export function AIInsightsModal({ documentId, visible, onClose }: AIInsightsModalProps) {
+export function AIInsightsModal({ documentId, text, visible, onClose }: AIInsightsModalProps) {
   const { palette } = useTheme();
-  const summary = useSummary(documentId, visible);
-  const keywords = useKeywords(documentId, visible);
+  const summary = useSummary(documentId, text, visible);
+  const keywords = useKeywords(documentId, text, visible);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>

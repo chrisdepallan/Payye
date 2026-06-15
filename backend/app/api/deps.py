@@ -1,39 +1,53 @@
-"""Shared FastAPI dependencies."""
+"""Stateless cross-cutting dependencies: gateway token + rate limiting."""
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+import time
+from collections import defaultdict, deque
+from typing import Deque, Dict, Optional
 
-from app.core.database import get_db
-from app.core.security import decode_access_token
-from app.models import User
+from fastapi import Header, HTTPException, Request, status
 
-_bearer = HTTPBearer(auto_error=False)
+from app.core.config import settings
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    db: Session = Depends(get_db),
-) -> User:
-    if credentials is None:
+async def verify_app_token(x_app_token: Optional[str] = Header(default=None)) -> None:
+    """Require the shared app token when APP_TOKEN is configured."""
+    if settings.APP_TOKEN and x_app_token != settings.APP_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid or missing app token",
         )
 
-    user_id = decode_access_token(credentials.credentials)
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
-    user = db.get(User, user_id)
-    if user is None:
+# Simple in-memory fixed-window limiter (per worker). Good enough for a single
+# instance; put a real limiter / gateway in front for multi-instance production.
+_hits: Dict[str, Deque[float]] = defaultdict(deque)
+
+
+def rate_limit(request: Request) -> None:
+    limit = settings.RATE_LIMIT_PER_MINUTE
+    if limit <= 0:
+        return
+
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    window = _hits[client_ip]
+
+    while window and now - window[0] > 60:
+        window.popleft()
+
+    if len(window) >= limit:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User no longer exists",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests, slow down",
         )
-    return user
+    window.append(now)
+
+
+def guard_length(text: str) -> str:
+    """Reject oversized inputs (returns the text for convenient chaining)."""
+    if len(text) > settings.MAX_INPUT_CHARS:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Text exceeds the {settings.MAX_INPUT_CHARS}-character limit",
+        )
+    return text

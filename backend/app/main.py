@@ -1,37 +1,22 @@
-"""Payye FastAPI application entrypoint."""
-
-from contextlib import asynccontextmanager
+"""Payye stateless AI backend entrypoint."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
-from app.core.database import Base, engine
-
-# Importing models registers their mappers so create_all sees every table.
-import app.models  # noqa: F401
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    # For development convenience we create tables on startup. In production
-    # use Alembic migrations (see backend/migrations) instead.
-    Base.metadata.create_all(bind=engine)
-    yield
-
+from app.schemas import ConfigOut
 
 app = FastAPI(
     title=f"{settings.APP_NAME} API",
-    version="0.1.0",
-    description="Word-by-word reading efficiency app backend.",
-    lifespan=lifespan,
+    version="0.2.0",
+    description="Stateless AI service for the Payye reader (no data is stored).",
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -39,6 +24,16 @@ app.add_middleware(
 app.include_router(api_router)
 
 
-@app.get("/health", tags=["health"])
+@app.get("/health", tags=["system"])
 def health() -> dict:
     return {"status": "ok", "app": settings.APP_NAME}
+
+
+@app.get("/config", response_model=ConfigOut, tags=["system"])
+def config() -> ConfigOut:
+    return ConfigOut(
+        app_name=settings.APP_NAME,
+        model=settings.OPENAI_MODEL,
+        ai_enabled=settings.ai_enabled,
+        max_input_chars=settings.MAX_INPUT_CHARS,
+    )

@@ -6,29 +6,26 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
 import { radius, spacing } from '../constants/theme';
-import { useCreateDocument } from '../hooks/useDocuments';
 import { useTheme } from '../hooks/useTheme';
 import { RootStackScreenProps } from '../navigation/types';
-import { getErrorMessage } from '../services/api';
+import { useLibraryStore } from '../store/libraryStore';
 import { countWords } from '../utils/tokenizer';
 
 const DRAFT_KEY = 'payye.draft';
 
 export function NewSessionScreen({ navigation }: RootStackScreenProps<'NewSession'>) {
   const { palette } = useTheme();
-  const createDoc = useCreateDocument();
+  const addDocument = useLibraryStore((s) => s.add);
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Restore any saved draft on open.
   useEffect(() => {
     AsyncStorage.getItem(DRAFT_KEY).then((draft) => {
       if (draft) setText(draft);
@@ -40,23 +37,16 @@ export function NewSessionScreen({ navigation }: RootStackScreenProps<'NewSessio
     void AsyncStorage.setItem(DRAFT_KEY, value);
   };
 
-  const onStart = () => {
+  const onStart = async () => {
     setError(null);
     if (!text.trim()) {
       setError('Paste some text to read.');
       return;
     }
     const resolvedTitle = title.trim() || text.trim().slice(0, 40) || 'Untitled';
-    createDoc.mutate(
-      { title: resolvedTitle, text: text.trim() },
-      {
-        onSuccess: async (doc) => {
-          await AsyncStorage.removeItem(DRAFT_KEY);
-          navigation.replace('Reader', { documentId: doc.id });
-        },
-        onError: (e) => setError(getErrorMessage(e, 'Could not create document')),
-      },
-    );
+    const doc = addDocument({ title: resolvedTitle, text: text.trim(), sourceType: 'text' });
+    await AsyncStorage.removeItem(DRAFT_KEY);
+    navigation.replace('Reader', { documentId: doc.id });
   };
 
   return (
@@ -90,13 +80,11 @@ export function NewSessionScreen({ navigation }: RootStackScreenProps<'NewSessio
           ]}
         />
 
-        <Text style={[styles.count, { color: palette.textMuted }]}>
-          {countWords(text)} words
-        </Text>
+        <Text style={[styles.count, { color: palette.textMuted }]}>{countWords(text)} words</Text>
 
         {error ? <Text style={[styles.error, { color: palette.danger }]}>{error}</Text> : null}
 
-        <Button title="Start reading" onPress={onStart} loading={createDoc.isPending} />
+        <Button title="Start reading" onPress={onStart} />
       </KeyboardAvoidingView>
     </Screen>
   );

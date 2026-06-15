@@ -1,7 +1,12 @@
-# Payye Backend (FastAPI)
+# Payye AI Backend (FastAPI)
 
-Word-by-word reading efficiency API: auth, documents, reading sessions,
-settings and AI helpers.
+A **stateless** AI service for the Payye reader. It stores **no data** — no
+database, no accounts, no documents. Every request carries its own text and the
+backend returns an AI response. Its main job is to keep the OpenAI key
+server-side (you can't safely ship that key in a mobile app) and to normalize
+AI output into typed JSON.
+
+All user data (documents, reading progress, settings) lives on the device.
 
 ## Quick start
 
@@ -15,45 +20,35 @@ cp .env.example .env            # optional, defaults work out of the box
 uvicorn app.main:app --reload
 ```
 
-The API runs at http://localhost:8000. Interactive docs: http://localhost:8000/docs
+API: http://localhost:8000  ·  Docs: http://localhost:8000/docs
 
-By default it uses a local SQLite file (`payye.db`) and creates tables on
-startup — no database server required.
+Without `OPENAI_API_KEY` the AI endpoints still respond using local heuristics
+(summary/keywords/difficulty/vocabulary). `simplify` returns the text unchanged
+and `quiz`/`chat` explain that a key is required.
 
-## Configuration
+## Endpoints
 
-All settings live in `.env` (see `.env.example`). Highlights:
+| Method | Path              | Body                              | Returns                                   |
+| ------ | ----------------- | --------------------------------- | ----------------------------------------- |
+| POST   | `/ai/summary`     | `{ text }`                        | `{ summary }`                             |
+| POST   | `/ai/keywords`    | `{ text }`                        | `{ keywords[], difficulty_level }`        |
+| POST   | `/ai/difficulty`  | `{ text }`                        | `{ difficulty_level }`                    |
+| POST   | `/ai/vocabulary`  | `{ word, context? }`              | `{ word, definition, example? }`          |
+| POST   | `/ai/simplify`    | `{ text }`                        | `{ text }`                                |
+| POST   | `/ai/quiz`        | `{ text, num_questions? }`        | `{ questions[] }`                         |
+| POST   | `/ai/chat`        | `{ text?, messages[] }`           | `{ reply }`                               |
+| POST   | `/extract`        | multipart `file` (TXT/PDF)        | `{ text, word_count, source_type }`       |
+| GET    | `/health`         | —                                 | `{ status, app }`                         |
+| GET    | `/config`         | —                                 | `{ app_name, model, ai_enabled, max_input_chars }` |
 
-| Variable          | Default                 | Notes                                        |
-| ----------------- | ----------------------- | -------------------------------------------- |
-| `DATABASE_URL`    | `sqlite:///./payye.db`  | Set to a Postgres URL for production.        |
-| `SECRET_KEY`      | `dev-secret-change-me`  | **Change in production.**                    |
-| `STORAGE_BACKEND` | `local`                 | `local` or `s3` (MinIO/AWS).                 |
-| `OPENAI_API_KEY`  | _unset_                 | Optional. Without it, AI uses local heuristics. |
+## Cross-cutting behavior (still no storage)
 
-## API overview
-
-| Method | Path                    | Purpose                          |
-| ------ | ----------------------- | -------------------------------- |
-| POST   | `/auth/register`        | Create account, returns JWT      |
-| POST   | `/auth/login`           | Login, returns JWT               |
-| GET    | `/auth/me`              | Current user                     |
-| POST   | `/documents`            | Create document from pasted text |
-| POST   | `/documents/upload`     | Upload TXT/PDF (multipart)       |
-| GET    | `/documents`            | List documents                   |
-| GET    | `/documents/{id}`       | Document detail (with text)      |
-| DELETE | `/documents/{id}`       | Delete document                  |
-| POST   | `/sessions/start`       | Start or resume a reading session|
-| PATCH  | `/sessions/{id}`        | Save progress / wpm / status     |
-| GET    | `/sessions/current`     | Most recent unfinished session   |
-| GET    | `/sessions/history`     | All sessions                     |
-| GET    | `/settings`             | Read user settings               |
-| PATCH  | `/settings`             | Update user settings             |
-| POST   | `/ai/summary`           | Summarize a document             |
-| POST   | `/ai/keywords`          | Keywords + difficulty            |
-| POST   | `/ai/vocabulary-help`   | Define a word                    |
-
-Authenticated routes expect `Authorization: Bearer <token>`.
+- **OpenAI key custody** + outbound calls and response parsing.
+- **Heuristic fallback** so summaries/keywords/difficulty/vocabulary work offline.
+- **Gateway token** (`APP_TOKEN`): when set, clients must send `X-App-Token`.
+- **Rate limiting** (`RATE_LIMIT_PER_MINUTE`, in-memory per IP).
+- **Input size guard** (`MAX_INPUT_CHARS`) and a 10 MB upload cap on `/extract`.
+- **CORS**, health and config endpoints.
 
 ## Tests
 
@@ -61,32 +56,4 @@ Authenticated routes expect `Authorization: Bearer <token>`.
 pytest
 ```
 
-Tests run against an in-memory SQLite database and exercise auth, documents,
-sessions, settings and the AI fallbacks.
-
-## Migrations (production)
-
-Startup `create_all` is convenient for development. For production use Alembic:
-
-```bash
-alembic revision --autogenerate -m "initial"
-alembic upgrade head
-```
-
-## Optional services (Postgres + MinIO)
-
-```bash
-docker compose up -d        # see docker-compose.yml
-```
-
-Then set in `.env`:
-
-```
-DATABASE_URL=postgresql+psycopg://payye:payye@localhost:5432/payye
-STORAGE_BACKEND=s3
-S3_ENDPOINT_URL=http://localhost:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-```
-
-(Postgres also needs the driver: `pip install "psycopg[binary]"`.)
+Tests exercise the endpoints with the offline fallbacks (no key required).

@@ -15,20 +15,19 @@ import {
 import { Card } from '../components/Card';
 import { Screen } from '../components/Screen';
 import { radius, spacing } from '../constants/theme';
-import { useDeleteDocument, useDocuments } from '../hooks/useDocuments';
 import { useTheme } from '../hooks/useTheme';
 import { RootStackParamList } from '../navigation/types';
+import { useLibraryStore } from '../store/libraryStore';
 import { Document } from '../types';
 
 export function LibraryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { palette } = useTheme();
-  const { data: documents, isLoading, refetch, isRefetching } = useDocuments();
-  const deleteDoc = useDeleteDocument();
+  const documents = useLibraryStore((s) => s.documents);
+  const removeDocument = useLibraryStore((s) => s.remove);
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    if (!documents) return [];
     const q = query.trim().toLowerCase();
     if (!q) return documents;
     return documents.filter((d) => d.title.toLowerCase().includes(q));
@@ -37,7 +36,7 @@ export function LibraryScreen() {
   const confirmDelete = (doc: Document) => {
     Alert.alert('Delete document', `Remove "${doc.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteDoc.mutate(doc.id) },
+      { text: 'Delete', style: 'destructive', onPress: () => removeDocument(doc.id) },
     ]);
   };
 
@@ -81,17 +80,13 @@ export function LibraryScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        onRefresh={refetch}
-        refreshing={isRefetching}
         ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.empty}>
-              <Ionicons name="library-outline" size={40} color={palette.textMuted} />
-              <Text style={[styles.emptyText, { color: palette.textMuted }]}>
-                {query ? 'No matching documents.' : 'Your library is empty. Add a document from Home.'}
-              </Text>
-            </View>
-          ) : null
+          <View style={styles.empty}>
+            <Ionicons name="library-outline" size={40} color={palette.textMuted} />
+            <Text style={[styles.emptyText, { color: palette.textMuted }]}>
+              {query ? 'No matching documents.' : 'Your library is empty. Add a document from Home.'}
+            </Text>
+          </View>
         }
       />
     </Screen>

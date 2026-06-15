@@ -1,25 +1,21 @@
 import { api } from './api';
 import { KeywordsResponse, SummaryResponse, VocabularyResponse } from '../types';
 
-export async function getSummary(documentId: string): Promise<SummaryResponse> {
-  const { data } = await api.post<SummaryResponse>('/ai/summary', {
-    document_id: documentId,
-  });
+export async function getSummary(text: string): Promise<SummaryResponse> {
+  const { data } = await api.post<SummaryResponse>('/ai/summary', { text });
   return data;
 }
 
-export async function getKeywords(documentId: string): Promise<KeywordsResponse> {
-  const { data } = await api.post<KeywordsResponse>('/ai/keywords', {
-    document_id: documentId,
-  });
+export async function getKeywords(text: string): Promise<KeywordsResponse> {
+  const { data } = await api.post<KeywordsResponse>('/ai/keywords', { text });
   return data;
 }
 
-export async function getVocabularyHelp(
+export async function getVocabulary(
   word: string,
   context?: string,
 ): Promise<VocabularyResponse> {
-  const { data } = await api.post<VocabularyResponse>('/ai/vocabulary-help', {
+  const { data } = await api.post<VocabularyResponse>('/ai/vocabulary', {
     word,
     context,
   });

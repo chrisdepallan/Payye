@@ -13,7 +13,7 @@ const fallback = Platform.select({
   default: 'http://localhost:8000',
 });
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? fallback ?? 'http://localhost:8000';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? fallback ?? 'https://payye.vercel.app/api';
 
 // Optional shared gateway token, sent as the X-App-Token header when set.
 export const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? null;

@@ -29,3 +29,4 @@ app/.env
 Thumbs.db
 .idea/
 .vscode/
+app/package-lock.json

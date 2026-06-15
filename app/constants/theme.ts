@@ -12,7 +12,9 @@ export interface Palette {
   success: string;
 }
 
-export const palettes: Record<'dark' | 'light', Palette> = {
+export type ThemeName = 'dark' | 'light' | 'black';
+
+export const palettes: Record<ThemeName, Palette> = {
   dark: {
     background: '#0E1116',
     surface: '#181D26',
@@ -38,6 +40,22 @@ export const palettes: Record<'dark' | 'light', Palette> = {
     border: '#DCE3EC',
     danger: '#D64545',
     success: '#1FA971',
+  },
+  // True-black / AMOLED. Pure #000000 background switches OLED pixels off,
+  // saving battery on most Android phones. Surfaces are near-black so cards
+  // still read as slightly elevated against the void.
+  black: {
+    background: '#000000',
+    surface: '#0A0A0C',
+    surfaceAlt: '#15161A',
+    text: '#F5F7FA',
+    textMuted: '#8A93A0',
+    primary: '#4F8CFF',
+    primaryText: '#FFFFFF',
+    accent: '#FFB454',
+    border: '#1A1D24',
+    danger: '#FF6B6B',
+    success: '#3DD68C',
   },
 };
 

@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
 function Root() {
   const { scheme, palette } = useTheme();
 
-  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const base = scheme === 'light' ? DefaultTheme : DarkTheme;
   const navTheme: Theme = {
     ...base,
     colors: {
@@ -36,7 +36,7 @@ function Root() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
       <RootNavigator />
     </NavigationContainer>
   );

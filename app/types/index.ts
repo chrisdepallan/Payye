@@ -1,5 +1,7 @@
 // All user data lives on the device. These are the local shapes.
 
+import { ThemeName } from '../constants/theme';
+
 export interface Document {
   id: string;
   title: string;
@@ -21,7 +23,7 @@ export interface SessionRecord {
 
 export interface UserSettings {
   default_wpm: number;
-  theme: 'dark' | 'light';
+  theme: ThemeName;
   font_size: number;
   pause_on_punctuation: boolean;
 }

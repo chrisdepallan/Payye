@@ -13,7 +13,7 @@ from app.schemas import (
     TextRequest,
     VocabularyOut,
     VocabularyRequest,
-)
+)       
 from app.services import ai_service
 
 router = APIRouter(

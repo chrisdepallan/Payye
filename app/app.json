@@ -7,18 +7,24 @@
     "scheme": "payye",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.chrisdepallan.payye"
     },
     "web": {
       "bundler": "metro"
     },
     "extra": {
-      "apiUrl": "http://localhost:8000"
+      "apiUrl": "http://localhost:8000",
+      "eas": {
+        "projectId": "26b7251a-e98b-40d5-8c74-889b43a77936"
+      }
     }
   }
 }

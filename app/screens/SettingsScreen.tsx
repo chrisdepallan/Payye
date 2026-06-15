@@ -1,12 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Card } from '../components/Card';
 import { Screen } from '../components/Screen';
 import { SpeedControls } from '../components/SpeedControls';
-import { radius, spacing } from '../constants/theme';
+import { radius, spacing, ThemeName } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { useSettingsStore } from '../store/settingsStore';
+
+const THEME_ICONS: Record<ThemeName, keyof typeof Ionicons.glyphMap> = {
+  dark: 'moon',
+  light: 'sunny',
+  black: 'battery-charging',
+};
 
 export function SettingsScreen() {
   const { palette } = useTheme();
@@ -21,8 +28,16 @@ export function SettingsScreen() {
       <Card style={styles.card}>
         <Text style={[styles.label, { color: palette.textMuted }]}>THEME</Text>
         <View style={styles.themeRow}>
-          {(['dark', 'light'] as const).map((option) => {
+          {(['dark', 'light', 'black'] as const).map((option) => {
             const active = settings.theme === option;
+            // The black/AMOLED option always shows its green symbol so it reads
+            // as the battery-saving choice even when not selected.
+            const symbolColor =
+              option === 'black'
+                ? palette.success
+                : active
+                  ? palette.primaryText
+                  : palette.text;
             return (
               <Pressable
                 key={option}
@@ -35,6 +50,7 @@ export function SettingsScreen() {
                   },
                 ]}
               >
+                <Ionicons name={THEME_ICONS[option]} size={16} color={symbolColor} />
                 <Text
                   style={{
                     color: active ? palette.primaryText : palette.text,
@@ -125,7 +141,10 @@ const styles = StyleSheet.create({
   },
   themeChip: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,

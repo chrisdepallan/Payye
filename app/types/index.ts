@@ -31,6 +31,12 @@ export interface UserSettings {
   theme: ThemeName;
   font_size: number;
   pause_on_punctuation: boolean;
+  // Crossfade between palettes instead of snapping (avoids the light/dark "flashbang").
+  theme_transitions: boolean;
+  // Tint the Optimal Recognition Point letter + show the focus guides in the reader.
+  focus_highlight: boolean;
+  // Hold longer words on screen a touch longer than the base WPM interval.
+  long_word_slowdown: boolean;
 }
 
 // --- AI responses (from the stateless backend) ---

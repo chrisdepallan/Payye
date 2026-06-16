@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../hooks/useTheme';
+import { useSettingsStore } from '../store/settingsStore';
 import { orpIndex } from '../utils/readerTiming';
 
 interface WordDisplayProps {
@@ -11,15 +12,27 @@ interface WordDisplayProps {
 
 /**
  * Renders a single word with its Optimal Recognition Point letter highlighted,
- * flanked by focus guides — the classic RSVP (rapid serial visual) layout.
+ * flanked by focus guides — the classic RSVP (rapid serial visual) layout. The
+ * highlight + guides can be turned off in settings for a plain-word display.
  */
 export function WordDisplay({ word, fontSize }: WordDisplayProps) {
   const { palette } = useTheme();
+  const highlight = useSettingsStore((s) => s.focus_highlight);
 
   if (!word) {
     return (
       <View style={styles.container}>
         <Text style={[styles.word, { fontSize, color: palette.textMuted }]}>—</Text>
+      </View>
+    );
+  }
+
+  if (!highlight) {
+    return (
+      <View style={styles.container}>
+        <Text style={[styles.word, { fontSize, color: palette.text }]} numberOfLines={1}>
+          {word}
+        </Text>
       </View>
     );
   }

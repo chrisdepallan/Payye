@@ -73,3 +73,7 @@ export const radius = {
   lg: 20,
   pill: 999,
 };
+
+// How long a light↔dark (or any palette) crossfade takes. Long enough to read as
+// a gentle dim rather than a snap, short enough to feel responsive.
+export const THEME_TRANSITION_MS = 320;

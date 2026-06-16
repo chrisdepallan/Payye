@@ -1,7 +1,6 @@
-import { Palette, palettes, ThemeName } from '../constants/theme';
-import { useSettingsStore } from '../store/settingsStore';
+import { Palette, ThemeName } from '../constants/theme';
+import { useThemeContext } from './ThemeProvider';
 
 export function useTheme(): { palette: Palette; scheme: ThemeName } {
-  const scheme = useSettingsStore((s) => s.theme);
-  return { palette: palettes[scheme], scheme };
+  return useThemeContext();
 }

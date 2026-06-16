@@ -17,6 +17,7 @@ export function useReaderEngine({ onComplete }: ReaderEngineOptions = {}): void 
   const index = useReaderStore((s) => s.index);
   const wpm = useReaderStore((s) => s.wpm);
   const pauseOnPunctuation = useReaderStore((s) => s.pauseOnPunctuation);
+  const longWordSlowdown = useReaderStore((s) => s.longWordSlowdown);
   const tokens = useReaderStore((s) => s.tokens);
   const skip = useReaderStore((s) => s.skip);
   const pause = useReaderStore((s) => s.pause);
@@ -27,7 +28,7 @@ export function useReaderEngine({ onComplete }: ReaderEngineOptions = {}): void 
     }
 
     const token = tokens[index] ?? '';
-    const delay = intervalForToken(token, { wpm, pauseOnPunctuation });
+    const delay = intervalForToken(token, { wpm, pauseOnPunctuation, longWordSlowdown });
     const atEnd = index >= tokens.length - 1;
 
     const timer = setTimeout(() => {
@@ -40,5 +41,5 @@ export function useReaderEngine({ onComplete }: ReaderEngineOptions = {}): void 
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [isPlaying, index, wpm, pauseOnPunctuation, tokens, skip, pause, onComplete]);
+  }, [isPlaying, index, wpm, pauseOnPunctuation, longWordSlowdown, tokens, skip, pause, onComplete]);
 }

@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ThemeProvider } from './hooks/ThemeProvider';
 import { useTheme } from './hooks/useTheme';
 import { RootNavigator } from './navigation/RootNavigator';
 
@@ -46,7 +47,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <Root />
+        <ThemeProvider>
+          <Root />
+        </ThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
   );

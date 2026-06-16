@@ -15,6 +15,7 @@ export interface ReaderLoadParams {
   startIndex: number;
   wpm: number;
   pauseOnPunctuation: boolean;
+  longWordSlowdown: boolean;
 }
 
 interface ReaderState {
@@ -26,6 +27,7 @@ interface ReaderState {
   isPlaying: boolean;
   wpm: number;
   pauseOnPunctuation: boolean;
+  longWordSlowdown: boolean;
 
   load: (params: ReaderLoadParams) => void;
   play: () => void;
@@ -47,8 +49,18 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   isPlaying: false,
   wpm: 250,
   pauseOnPunctuation: true,
+  longWordSlowdown: true,
 
-  load: ({ sessionId, documentId, title, text, startIndex, wpm, pauseOnPunctuation }) => {
+  load: ({
+    sessionId,
+    documentId,
+    title,
+    text,
+    startIndex,
+    wpm,
+    pauseOnPunctuation,
+    longWordSlowdown,
+  }) => {
     const tokens = tokenize(text);
     set({
       sessionId,
@@ -58,6 +70,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       index: clamp(startIndex, tokens.length),
       wpm,
       pauseOnPunctuation,
+      longWordSlowdown,
       isPlaying: false,
     });
   },

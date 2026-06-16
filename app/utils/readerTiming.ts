@@ -10,6 +10,8 @@
 export interface TimingOptions {
   wpm: number;
   pauseOnPunctuation: boolean;
+  // Hold longer words a touch longer than the base interval. Defaults to on.
+  longWordSlowdown?: boolean;
 }
 
 const SENTENCE_END = /[.!?]["')\]]*$/;
@@ -25,7 +27,7 @@ export function intervalForToken(token: string, options: TimingOptions): number 
   let multiplier = 1;
 
   // Long-word adjustment: each character beyond 8 adds a little dwell time.
-  if (token.length > 8) {
+  if (options.longWordSlowdown !== false && token.length > 8) {
     multiplier += Math.min((token.length - 8) * 0.04, 0.6);
   }
 

@@ -30,6 +30,7 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const fontSize = useSettingsStore((s) => s.font_size);
   const defaultWpm = useSettingsStore((s) => s.default_wpm);
   const pauseOnPunctuation = useSettingsStore((s) => s.pause_on_punctuation);
+  const longWordSlowdown = useSettingsStore((s) => s.long_word_slowdown);
   const upsertSession = useSessionsStore((s) => s.upsert);
   const accumulateSession = useSessionsStore((s) => s.accumulate);
   const recordReading = useStatsStore((s) => s.recordReading);
@@ -109,6 +110,7 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
       startIndex,
       wpm: startWpm,
       pauseOnPunctuation,
+      longWordSlowdown,
     });
     upsertSession(documentId, {
       current_word_index: startIndex,

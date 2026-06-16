@@ -109,6 +109,11 @@ export function HomeScreen() {
           <Button title="＋  New session (paste text)" onPress={() => navigation.navigate('NewSession')} />
           <Button title="⬆  Upload TXT or PDF" variant="secondary" loading={busy} onPress={onUpload} />
           <Button
+            title="🔎  Browse free ebooks"
+            variant="secondary"
+            onPress={() => navigation.navigate('Tabs', { screen: 'Discover' })}
+          />
+          <Button
             title="Browse library"
             variant="ghost"
             onPress={() => navigation.navigate('Tabs', { screen: 'Library' })}

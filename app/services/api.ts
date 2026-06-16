@@ -27,5 +27,7 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
       return 'Cannot reach the AI server. Is the backend running?';
     }
   }
+  // Plain thrown errors (e.g. friendly messages from the ebook sources).
+  if (error instanceof Error && error.message) return error.message;
   return fallback;
 }

@@ -49,3 +49,38 @@ export interface ExtractResponse {
   word_count: number;
   source_type: string;
 }
+
+// --- Free-ebook discovery (fetched directly from public sources) ---
+export interface BookSource {
+  id: string; // also used as Document.source_type, e.g. "gutenberg"
+  name: string;
+  supportsLanguage: boolean;
+  supportsTopic: boolean;
+}
+
+export interface BookSummary {
+  source: string;
+  id: string;
+  title: string;
+  authors: string[];
+  languages: string[];
+  subjects: string[];
+  coverUrl?: string | null;
+  downloadCount?: number | null;
+}
+
+export interface BookSearchPage {
+  results: BookSummary[];
+  nextPage: number | null;
+}
+
+export interface BookText {
+  title: string;
+  text: string;
+}
+
+export interface BookSearchOptions {
+  language?: string; // ISO-639-1, e.g. "en"
+  topic?: string;
+  page?: number;
+}

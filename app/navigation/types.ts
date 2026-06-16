@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type TabParamList = {
   Home: undefined;
+  Discover: undefined;
   Library: undefined;
   Settings: undefined;
 };

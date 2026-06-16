@@ -22,3 +22,13 @@ export const WPM_MIN = 60;
 export const WPM_MAX = 1000;
 export const WPM_STEP = 25;
 export const WPM_PRESETS = [200, 300, 400, 500];
+
+// --- Free-ebook sources (called directly from the device; no backend proxy) ---
+export const GUTENDEX_URL = 'https://gutendex.com';
+export const OPENLIBRARY_URL = 'https://openlibrary.org';
+export const OPENLIBRARY_COVERS_URL = 'https://covers.openlibrary.org';
+export const INTERNET_ARCHIVE_URL = 'https://archive.org';
+
+// Cap fetched book text so the reader/AsyncStorage stay responsive on device
+// (~170k words). The backend AI guard of 50k chars is unaffected by this.
+export const MAX_BOOK_CHARS = 1_000_000;

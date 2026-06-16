@@ -72,6 +72,8 @@ locally on the device.
 - **Persistence** — progress, WPM and status saved locally; "Continue reading"
   resumes the most recent unfinished session.
 - **Documents** — paste text or upload TXT/PDF (extracted via the backend), searchable library.
+- **Discover** — search and filter free ebooks from Project Gutenberg and Open Library
+  (called directly from the app), then read them word-by-word like any other document.
 - **Settings** — theme, font size, default WPM, pause-on-punctuation.
 - **AI** — summary, keywords + difficulty, vocabulary, simplify, quiz and chat,
   served by the backend (OpenAI when configured, local heuristics otherwise).

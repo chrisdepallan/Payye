@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 
 import { Card } from '../components/Card';
+import { ProgressBar } from '../components/ProgressBar';
 import { Screen } from '../components/Screen';
 import { radius, spacing } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { RootStackParamList } from '../navigation/types';
 import { useLibraryStore } from '../store/libraryStore';
+import { useSessionsStore } from '../store/sessionsStore';
 import { Document } from '../types';
 
 export function LibraryScreen() {
@@ -25,6 +27,7 @@ export function LibraryScreen() {
   const { palette } = useTheme();
   const documents = useLibraryStore((s) => s.documents);
   const removeDocument = useLibraryStore((s) => s.remove);
+  const sessions = useSessionsStore((s) => s.sessions);
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -40,26 +43,46 @@ export function LibraryScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: Document }) => (
-    <Card
-      style={styles.item}
-      onPress={() => navigation.navigate('Reader', { documentId: item.id })}
-    >
-      <View style={styles.itemRow}>
-        <View style={styles.itemText}>
-          <Text style={[styles.itemTitle, { color: palette.text }]} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={[styles.itemMeta, { color: palette.textMuted }]}>
-            {item.word_count} words · {item.source_type.toUpperCase()}
-          </Text>
+  const renderItem = ({ item }: { item: Document }) => {
+    const session = sessions[item.id];
+    const percent =
+      session && item.word_count > 0
+        ? Math.min(session.current_word_index / item.word_count, 1)
+        : 0;
+    const completed = session?.status === 'completed';
+    const hasProgress = !!session && percent > 0;
+
+    return (
+      <Card
+        style={styles.item}
+        onPress={() => navigation.navigate('Reader', { documentId: item.id })}
+      >
+        <View style={styles.itemRow}>
+          <View style={styles.itemText}>
+            <Text style={[styles.itemTitle, { color: palette.text }]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={[styles.itemMeta, { color: palette.textMuted }]}>
+              {item.word_count} words · {item.source_type.toUpperCase()}
+              {completed
+                ? ' · Finished'
+                : hasProgress
+                  ? ` · ${Math.round(percent * 100)}%`
+                  : ''}
+            </Text>
+          </View>
+          <Pressable onPress={() => confirmDelete(item)} hitSlop={10}>
+            <Ionicons name="trash-outline" size={20} color={palette.danger} />
+          </Pressable>
         </View>
-        <Pressable onPress={() => confirmDelete(item)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={palette.danger} />
-        </Pressable>
-      </View>
-    </Card>
-  );
+        {hasProgress ? (
+          <View style={styles.itemProgress}>
+            <ProgressBar progress={percent} />
+          </View>
+        ) : null}
+      </Card>
+    );
+  };
 
   return (
     <Screen>
@@ -136,6 +159,9 @@ const styles = StyleSheet.create({
   itemMeta: {
     fontSize: 13,
     marginTop: 2,
+  },
+  itemProgress: {
+    marginTop: spacing.sm,
   },
   empty: {
     alignItems: 'center',

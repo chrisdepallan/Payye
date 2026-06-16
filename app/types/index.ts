@@ -19,6 +19,11 @@ export interface SessionRecord {
   wpm: number;
   status: SessionStatus;
   updated_at: string;
+  // Reading statistics. Optional so sessions saved before this feature still load.
+  words_read?: number; // total words advanced through while reading (re-reads count)
+  time_spent_ms?: number; // accumulated active reading time
+  started_at?: string; // first time the book was opened
+  completed_at?: string; // when the book was finished
 }
 
 export interface UserSettings {

@@ -114,6 +114,11 @@ export function HomeScreen() {
             onPress={() => navigation.navigate('Tabs', { screen: 'Discover' })}
           />
           <Button
+            title="📊  Stats & achievements"
+            variant="ghost"
+            onPress={() => navigation.navigate('Tabs', { screen: 'Stats' })}
+          />
+          <Button
             title="Browse library"
             variant="ghost"
             onPress={() => navigation.navigate('Tabs', { screen: 'Library' })}

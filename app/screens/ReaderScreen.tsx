@@ -15,8 +15,10 @@ import { useLibraryStore } from '../store/libraryStore';
 import { useReaderStore } from '../store/readerStore';
 import { useSessionsStore } from '../store/sessionsStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useStatsStore } from '../store/statsStore';
 import { SessionStatus } from '../types';
 import { estimateMinutesRemaining, formatDuration } from '../utils/readerTiming';
+import { formatLongDuration } from '../utils/stats';
 
 const SAVE_EVERY_WORDS = 25;
 
@@ -29,6 +31,10 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const defaultWpm = useSettingsStore((s) => s.default_wpm);
   const pauseOnPunctuation = useSettingsStore((s) => s.pause_on_punctuation);
   const upsertSession = useSessionsStore((s) => s.upsert);
+  const accumulateSession = useSessionsStore((s) => s.accumulate);
+  const recordReading = useStatsStore((s) => s.recordReading);
+  const timeSpentMs = useSessionsStore((s) => s.sessions[documentId]?.time_spent_ms ?? 0);
+  const wordsRead = useSessionsStore((s) => s.sessions[documentId]?.words_read ?? 0);
 
   const load = useReaderStore((s) => s.load);
   const tokens = useReaderStore((s) => s.tokens);
@@ -46,6 +52,29 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
   const loadedRef = useRef(false);
   const lastSavedRef = useRef(0);
   const completedRef = useRef(false);
+
+  // Active-reading segment: wall-clock start + index when the current play run began.
+  const segStartTimeRef = useRef<number | null>(null);
+  const segStartIndexRef = useRef(0);
+
+  // Fold the elapsed time + words advanced of the current play segment into the
+  // session totals (and today's word bucket), then end the segment.
+  const flushActivity = useCallback(() => {
+    if (segStartTimeRef.current == null) return;
+    const elapsed = Date.now() - segStartTimeRef.current;
+    const wordsAdvanced = Math.max(
+      0,
+      useReaderStore.getState().index - segStartIndexRef.current,
+    );
+    segStartTimeRef.current = null;
+    accumulateSession(documentId, { wordsRead: wordsAdvanced, timeMs: elapsed });
+    recordReading(wordsAdvanced);
+  }, [documentId, accumulateSession, recordReading]);
+
+  const startSegment = useCallback(() => {
+    segStartTimeRef.current = Date.now();
+    segStartIndexRef.current = useReaderStore.getState().index;
+  }, []);
 
   const total = tokens.length;
   const atEnd = total > 0 && index >= total - 1 && !isPlaying;
@@ -96,17 +125,29 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
 
   useReaderEngine({ onComplete });
 
-  // Periodically save progress while playing.
+  // Track active reading time: open a segment on play, close (and bank) it on pause.
+  useEffect(() => {
+    if (isPlaying) {
+      startSegment();
+    } else {
+      flushActivity();
+    }
+  }, [isPlaying, startSegment, flushActivity]);
+
+  // Periodically save progress + bank reading time while playing.
   useEffect(() => {
     if (!isPlaying) return;
     if (Math.abs(index - lastSavedRef.current) >= SAVE_EVERY_WORDS) {
       persistProgress('active');
+      flushActivity();
+      startSegment();
     }
-  }, [index, isPlaying, persistProgress]);
+  }, [index, isPlaying, persistProgress, flushActivity, startSegment]);
 
-  // Save the last position when leaving the reader.
+  // Save the last position + bank any in-flight reading time when leaving.
   useEffect(() => {
     return () => {
+      flushActivity();
       if (completedRef.current) return;
       const state = useReaderStore.getState();
       if (state.documentId) {
@@ -192,6 +233,14 @@ export function ReaderScreen({ route, navigation }: RootStackScreenProps<'Reader
             </Text>
             <Text style={[styles.meta, { color: palette.textMuted }]}>
               ~{formatDuration(minutesRemaining * 60)} left
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={[styles.meta, { color: palette.textMuted }]}>
+              {`${Math.round(progress * 100)}% · ${wordsRead.toLocaleString()} words read`}
+            </Text>
+            <Text style={[styles.meta, { color: palette.textMuted }]}>
+              {formatLongDuration(timeSpentMs)} spent
             </Text>
           </View>
 

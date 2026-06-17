@@ -35,15 +35,29 @@ function toSummary(book: GutendexBook): BookSummary {
   };
 }
 
-/** Pick a readable plain-text file from a Gutendex `formats` map (skip zips). */
-function plainTextUrl(formats: Record<string, string>): string | null {
+/**
+ * Pick a readable plain-text file from a Gutendex `formats` map (skip zips).
+ *
+ * Gutendex hands back `…/ebooks/{id}.txt.utf-8`, but that endpoint 302-redirects
+ * to a *cleartext* `http://…/cache/epub/{id}/pg{id}.txt`. Release Android builds
+ * block cleartext traffic by default, so the redirect download fails in the APK
+ * even though Expo Go (which allows cleartext) works. We bypass the redirect by
+ * pointing straight at the canonical HTTPS cache file, and force https on any
+ * other plain-text URL as a safety net.
+ */
+function plainTextUrl(id: string, formats: Record<string, string>): string | null {
   const keys = Object.keys(formats);
   const key =
     keys.find((k) => k.startsWith('text/plain') && /utf-8/i.test(k)) ??
     keys.find((k) => k.startsWith('text/plain'));
   if (!key) return null;
   const url = formats[key];
-  return url && !url.endsWith('.zip') ? url : null;
+  if (!url || url.endsWith('.zip')) return null;
+  // The `.txt.utf-8` / `.txt` ebooks endpoint redirects to cleartext — go direct.
+  if (/\/ebooks\/\d+\.txt(\.utf-?8)?$/i.test(url)) {
+    return `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`;
+  }
+  return url.replace(/^http:\/\//i, 'https://');
 }
 
 export const gutenberg: SourceProvider = {
@@ -69,7 +83,7 @@ export const gutenberg: SourceProvider = {
 
   async fetchText(id) {
     const { data: book } = await bookHttp.get<GutendexBook>(`${GUTENDEX_URL}/books/${id}`);
-    const url = plainTextUrl(book.formats ?? {});
+    const url = plainTextUrl(id, book.formats ?? {});
     if (!url) {
       throw new Error('This book has no plain-text version to read.');
     }

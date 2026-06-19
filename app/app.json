@@ -7,6 +7,12 @@
     "scheme": "payye",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E1116"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -15,10 +21,15 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "package": "com.chrisdepallan.payye"
+      "package": "com.chrisdepallan.payye",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2F6BFF"
+      }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "apiUrl": "http://localhost:8000",

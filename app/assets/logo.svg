@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Payye logo — "The Pivot".
+  A bold white P with an amber focus reticle locked onto the stem: RSVP reading
+  fixated on the Optimal Recognition Point. Editable vector master; the PNG icon
+  set in this folder is generated from the same geometry by scripts/generate-logo.js.
+-->
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4F8CFF"/>
+      <stop offset="1" stop-color="#244CC0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Brand tile (iOS/Android mask the corners on the app icon). -->
+  <rect width="512" height="512" rx="115.2" fill="url(#tile)"/>
+
+  <!-- The "P": stem + right-half bowl. -->
+  <g>
+    <rect x="186.88" y="135.68" width="60.42" height="240.64" rx="30.21" fill="#F7FAFF"/>
+    <path d="M247.3 137.73 A59.39 59.39 0 0 1 247.3 256.51"
+          stroke="#F7FAFF" stroke-width="60.42" stroke-linecap="butt"/>
+  </g>
+
+  <!-- Amber focus reticle, centred on the stem column. -->
+  <rect x="203.79" y="64.00" width="26.62" height="40.96" rx="13.31" fill="#FFB454"/>
+  <rect x="203.79" y="407.04" width="26.62" height="40.96" rx="13.31" fill="#FFB454"/>
+</svg>

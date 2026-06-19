@@ -10,6 +10,7 @@ import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from './hooks/ThemeProvider';
+import { useReminders } from './hooks/useReminders';
 import { useTheme } from './hooks/useTheme';
 import { RootNavigator } from './navigation/RootNavigator';
 
@@ -21,6 +22,7 @@ const queryClient = new QueryClient({
 
 function Root() {
   const { scheme, palette } = useTheme();
+  useReminders();
 
   const base = scheme === 'light' ? DefaultTheme : DarkTheme;
   const navTheme: Theme = {

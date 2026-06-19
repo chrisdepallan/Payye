@@ -15,6 +15,13 @@ const THEME_ICONS: Record<ThemeName, keyof typeof Ionicons.glyphMap> = {
   black: 'battery-charging',
 };
 
+const REMINDER_TIMES = [
+  { label: '8 AM', hour: 8, minute: 0 },
+  { label: '1 PM', hour: 13, minute: 0 },
+  { label: '8 PM', hour: 20, minute: 0 },
+  { label: '10 PM', hour: 22, minute: 0 },
+] as const;
+
 export function SettingsScreen() {
   const { palette } = useTheme();
   const settings = useSettingsStore();
@@ -143,6 +150,59 @@ export function SettingsScreen() {
             value={settings.focus_highlight}
             onValueChange={(value) => update({ focus_highlight: value })}
           />
+        </Card>
+
+        <Text style={[styles.section, { color: palette.textMuted }]}>REMINDERS</Text>
+
+        <Card style={styles.card}>
+          <ToggleRow
+            title="Daily reading reminder"
+            subtitle="A gentle nudge to keep your streak going"
+            value={settings.reminders_enabled}
+            onValueChange={(value) => update({ reminders_enabled: value })}
+          />
+
+          {settings.reminders_enabled ? (
+            <>
+              <Divider />
+              <Text style={[styles.label, { color: palette.textMuted }]}>REMINDER TIME</Text>
+              <View style={styles.themeRow}>
+                {REMINDER_TIMES.map((time) => {
+                  const active =
+                    settings.reminder_hour === time.hour &&
+                    settings.reminder_minute === time.minute;
+                  return (
+                    <Pressable
+                      key={time.label}
+                      onPress={() =>
+                        update({ reminder_hour: time.hour, reminder_minute: time.minute })
+                      }
+                      style={[
+                        styles.themeChip,
+                        {
+                          borderColor: active ? palette.primary : palette.border,
+                          backgroundColor: active ? palette.primary : 'transparent',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: active ? palette.primaryText : palette.text,
+                          fontWeight: '600',
+                        }}
+                      >
+                        {time.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={[styles.subtitle, { color: palette.textMuted, marginTop: spacing.sm }]}>
+                Scheduled on this device only — no account needed. If reminders don’t appear,
+                enable notifications for Payye in your device settings.
+              </Text>
+            </>
+          ) : null}
         </Card>
 
         <Text style={[styles.note, { color: palette.textMuted }]}>

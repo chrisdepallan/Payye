@@ -16,6 +16,14 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#2F6BFF"
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true
     },

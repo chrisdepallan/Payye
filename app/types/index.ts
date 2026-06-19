@@ -37,6 +37,10 @@ export interface UserSettings {
   focus_highlight: boolean;
   // Hold longer words on screen a touch longer than the base WPM interval.
   long_word_slowdown: boolean;
+  // Local daily reading reminder (on-device notification; no backend involved).
+  reminders_enabled: boolean;
+  reminder_hour: number; // 0-23, local time
+  reminder_minute: number; // 0-59
 }
 
 // --- AI responses (from the stateless backend) ---
